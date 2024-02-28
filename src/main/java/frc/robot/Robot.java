@@ -5,8 +5,11 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.subsystems.SwerveSubsystem;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -19,6 +22,15 @@ public class Robot extends TimedRobot {
 
   private RobotContainer m_robotContainer;
 
+  private static final String Left2Low1High = "Left2Low1High";
+  private static final String Left3HighPrep = "Left3HighPrep";
+  private static final String Mid3HighPrep = "Mid3HighPrep";
+  private static final String Right2Low1High = "Right2Low1High";
+  private static final String Right3HighPrep = "Right3HighPrep";
+
+  private String m_autoSelected;
+  private final SendableChooser<String> m_chooser = new SendableChooser<>();
+
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -28,6 +40,32 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+
+    /*--------------------------------------------------------------------------
+    *  Initialize Auton
+    *-------------------------------------------------------------------------*/
+    m_chooser.setDefaultOption("Left2Low1High", Left2Low1High);
+    m_chooser.addOption("Left3HighPrep", Left3HighPrep);
+    m_chooser.addOption("Mid3HighPrep", Mid3HighPrep);
+    m_chooser.addOption("Right2Low1High", Right2Low1High);
+    m_chooser.addOption("Right3HighPrep", Right3HighPrep);
+    SmartDashboard.putData("Auto choices", m_chooser);
+
+    /*--------------------------------------------------------------------------
+    *  Engage Mechanical Brakes, Set Target Angles to Current Angles & Start
+    *  PID Threads
+    *-------------------------------------------------------------------------*/
+    
+    SwerveSubsystem.gyro.reset();
+
+    RobotContainer.arm.armPivotEnc.reset();
+    RobotContainer.intake.wristEnc.reset();
+    RobotContainer.arm.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
+    RobotContainer.intake.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
+
+    RobotContainer.arm.pivotPID();
+
+    RobotContainer.intake.pivotPID(); //Wrist PID
   }
 
   /**
@@ -56,7 +94,35 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+
+    m_autoSelected = m_chooser.getSelected();
+    System.out.println("Auto selected: " + m_autoSelected);
+
+    RobotContainer.arm.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
+    RobotContainer.intake.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
+
+    switch(m_autoSelected){
+      case Left2Low1High:
+        m_autonomousCommand = m_robotContainer.getLeft2Low1HighAutonomousCommand();
+        // Put custom auto code here
+        break;
+      case Left3HighPrep:
+      
+        // Put custom auto code here
+        break;
+      case Mid3HighPrep:
+        
+        // Put default auto code here
+        break;
+      case Right2Low1High:
+        
+        // Put default auto code here
+        break;
+      case Right3HighPrep:
+        
+        // Put default auto code here
+        break;
+    }
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
@@ -77,6 +143,9 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+
+    RobotContainer.arm.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
+    RobotContainer.intake.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
   }
 
   /** This function is called periodically during operator control. */

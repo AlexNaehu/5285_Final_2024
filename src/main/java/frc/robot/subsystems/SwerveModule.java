@@ -109,7 +109,6 @@ public class SwerveModule {
         return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getTurningPosition()));
     }
 
-    private double angleError;
     public void setDesiredState(SwerveModuleState desiredState) {
         if (Math.abs(desiredState.speedMetersPerSecond) < 0.001) {
             stop();

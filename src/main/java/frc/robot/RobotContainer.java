@@ -2,6 +2,7 @@ package frc.robot;
 
 import java.io.IOException;
 import java.nio.file.Path; //?????????????????????????????????????????????????????
+import java.util.Arrays;
 import java.util.List;
 
 import com.revrobotics.CANSparkMax;
@@ -26,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.networktables.NetworkTable;
 //import edu.wpi.first.hal.ThreadsJNI;
@@ -46,7 +48,9 @@ import frc.robot.Constants.DriveConstants;
 //import frc.robot.Constants.OIConstants;
 import frc.robot.commands.SwerveJoystickCmd;
 import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.FlyWheel;
+import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.SensorObject;
 
 public class RobotContainer {
@@ -55,11 +59,18 @@ public class RobotContainer {
 
     
     public final static XboxController controller1 = new XboxController(0);
+    public final static XboxController controller2 = new XboxController(1);
 
     public final static FlyWheel flyWheel = new FlyWheel();
 
+    public final static Arm arm = new Arm();
+
+    public final static Intake intake = new Intake();
+
     public static SensorObject sensor = new SensorObject();
     private UsbCamera cam;
+
+
 
     private double xPosition;
     private double yPosition;
@@ -70,12 +81,16 @@ public class RobotContainer {
     public RobotContainer() {
         swerveSubsystem.setDefaultCommand(new SwerveJoystickCmd(
                 swerveSubsystem,
-                () -> -controller1.getLeftY(), //left and right is Y axis per roborio
-                () -> -controller1.getLeftX(), //forward and back is X axis per roborio
-                () -> -controller1.getRightX(), //left is turn left, right is turn right
-                () -> !controller1.getBackButton(), //field oriented function unless pressed
-                () ->  controller1.getYButton(), //Aimbot AprilTag
-                () ->  controller1.getRightTriggerAxis())); //shoots flywheel
+                () -> -controller1.getLeftY(),                  //Translate Left(+)/ Right(-)
+                () -> -controller1.getLeftX(),                  //Translate Forward(+)/ Backward(-)
+                () -> -controller1.getRightX(),                 //Turn Right(+), Turn Left(-)
+                () -> !controller2.getBackButton(),             //Field Oriented Function Unless Pressed
+                () ->  controller2.getStartButton(),            //Aimbot AprilTag
+                () ->  controller1.getRightTriggerAxis(),       //Shoots and Feeds Flywheel
+                () ->  controller1.getLeftTriggerAxis(),        //Vacuum Intake
+                () ->  controller2.getYButton(),                //Arm and Wrist Low Score Angle
+                () ->  controller2.getXButton(),                //Arm and Wrist Pick Up Angle
+                () ->  controller2.getBButton()));              //Arm and Wrist Feed Angle
 
         configureButtonBindings();
 
@@ -94,18 +109,9 @@ public class RobotContainer {
         }
 
     }
-    
-    private boolean isBetween(double number, double lower, double upper){
-        if(number>=lower&&number<=upper){
-                return true;
-        }
-        else{
-                return false;
-        }
-    }
 
 
-    public Command getAutonomousCommand() {
+    public Command getLeft2Low1HighAutonomousCommand() {
         // 1. Create trajectory settings
 
         TrajectoryConfig trajectoryConfig = new TrajectoryConfig(
@@ -116,11 +122,11 @@ public class RobotContainer {
 
         // 2. Generate trajectory (Note: I can add interior waypoints, but everytime I need a new angle orientation, I need to concatinate trajecotries as trejectory is not modified in interior waypoints)
         
-        String trajectoryJSON1 = "paths/Score Low #1 (Pre-Load).wpilib.json";
-        String trajectoryJSON2 = "paths/Grab Close Piece.wpilib.json";
-        String trajectoryJSON3 = "paths/Score Low #2.wpilib.json";
-        String trajectoryJSON4 = "paths/Grab Center Piece (2nd from top).wpilib.json";
-        String trajectoryJSON5 = "paths/Return to Start (Prepare Tele-Op).wpilib.json";
+        String trajectoryJSON1 = "output/Score Low #1 (Pre-Load).wpilib.json";
+        String trajectoryJSON2 = "output/Grab Close Piece.wpilib.json";
+        String trajectoryJSON3 = "output/Score Low #2.wpilib.json";
+        String trajectoryJSON4 = "output/Grab Center Piece (2nd from top).wpilib.json";
+        String trajectoryJSON5 = "output/Return to Start (Prepare Tele-Op).wpilib.json";
         Trajectory trajectory1 = new Trajectory();
         Trajectory trajectory2 = new Trajectory();
         Trajectory trajectory3 = new Trajectory();
@@ -139,16 +145,17 @@ public class RobotContainer {
                 trajectory3 = TrajectoryUtil.fromPathweaverJson(trajectoryPath3);
                 trajectory4 = TrajectoryUtil.fromPathweaverJson(trajectoryPath4);
                 trajectory5 = TrajectoryUtil.fromPathweaverJson(trajectoryPath5);
+
+
+
         }       catch (IOException ex){
-                DriverStation.reportError("Unable to open a trajectory.", ex.getStackTrace());
+                DriverStation.reportError("Unable to open a trajectoryJSON File.", ex.getStackTrace());
         }
-        
-                trajectory1.concatenate(trajectory2);
-                trajectory1.concatenate(trajectory3);
-                trajectory1.concatenate(trajectory4);
-                trajectory1.concatenate(trajectory5);
-                
-                final Trajectory finalTrajectory = trajectory1;
+
+        List<Trajectory> trajectories = Arrays.asList(trajectory1, trajectory2);//, trajectory3, trajectory4, trajectory5);
+
+        //Trajectory finalTrajectory = trajectory1.concatenate(trajectory2).concatenate(trajectory3).concatenate(trajectory4).concatenate(trajectory5);
+
 
         // 3. Define PID controllers for tracking trajectory
         PIDController xController = new PIDController(AutoConstants.kPXController, 0, 0);
@@ -158,7 +165,30 @@ public class RobotContainer {
         thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
         // 4. Construct command to follow trajectory
-        SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
+
+        // Create a SequentialCommandGroup to execute trajectories sequentially
+        SequentialCommandGroup commandGroup = new SequentialCommandGroup();
+
+        int Counter = 1;
+        // Add commands for each trajectory with a delay between them
+        for (Trajectory trajectory : trajectories) {
+                commandGroup.addCommands(
+                new InstantCommand(() -> swerveSubsystem.resetOdometry(trajectory.getInitialPose())),
+                new SwerveControllerCommand(
+                        trajectory,
+                        swerveSubsystem::getPose,
+                        DriveConstants.kDriveKinematics,
+                        xController,
+                        yController,
+                        thetaController,
+                        swerveSubsystem::setModuleStates,
+                        swerveSubsystem),
+                new InstantCommand(() -> swerveSubsystem.stopModules()), 
+                new WaitCommand(1)// Add a 1-second delay between trajectories
+    );
+}
+
+        /*SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
                 finalTrajectory,    //JUST CHANGED TO A CONCATENATED TRAJECTORY
                 swerveSubsystem::getPose,
                 DriveConstants.kDriveKinematics,
@@ -167,26 +197,24 @@ public class RobotContainer {
                 thetaController,
                 swerveSubsystem::setModuleStates,
                 swerveSubsystem);
+        */
 
         // 5. Add additional commands (intake, flywheel, arm, aimbot, ect.)
         xPosition = swerveSubsystem.getPose().getX();
         yPosition = swerveSubsystem.getPose().getY();
         thetaPosition = swerveSubsystem.getPose().getRotation().getDegrees();
 
-        if(isBetween(xPosition, 1.95, 2.05) && isBetween(yPosition, -0.95, -1.05)){
-                //flyWheel.shoot(1);
-        }
-        else{
-                //flyWheel.shoot(0);
-        }
-        if(xPosition >= 1.7){
-                swerveSubsystem.stopModules();
-        }
         
         // 6. Add some init and wrap-up, and return everything
-        return new SequentialCommandGroup(
+        /*return new SequentialCommandGroup(
                 new InstantCommand(() -> swerveSubsystem.resetOdometry(finalTrajectory.getInitialPose())),
                 swerveControllerCommand,
                 new InstantCommand(() -> swerveSubsystem.stopModules()));
+        */
+
+        commandGroup.addCommands(new InstantCommand(() -> swerveSubsystem.stopModules()));
+
+        return commandGroup;
     }
+    
 }

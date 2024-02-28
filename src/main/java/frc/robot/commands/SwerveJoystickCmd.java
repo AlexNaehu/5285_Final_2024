@@ -1,13 +1,16 @@
 package frc.robot.commands;
 
+import java.nio.ReadOnlyBufferException;
 import java.util.function.Supplier;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.robot.Constants.ArmConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.Constants.WristConstants;
 import frc.robot.subsystems.FlyWheel;
 import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.RobotContainer;
@@ -15,21 +18,32 @@ import frc.robot.RobotContainer;
 public class SwerveJoystickCmd extends CommandBase {
 
     private final SwerveSubsystem swerveSubsystem;
-    private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction, flyWheelFunction;
+    private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction, flyWheelShootFunction;
+    private final Supplier<Double> intakeVacuumFunction;
     private final Supplier<Boolean> fieldOrientedFunction;
     private final Supplier<Boolean> aimBotFunction;
+    private final Supplier<Boolean> armLowScoreFunction;
+    private final Supplier<Boolean> armPickUpFunction;
+    private final Supplier<Boolean> armFeedFunction;
+
     private final SlewRateLimiter xLimiter, yLimiter, turningLimiter;
 
     public SwerveJoystickCmd(SwerveSubsystem swerveSubsystem,
             Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, Supplier<Double> turningSpdFunction,
-            Supplier<Boolean> fieldOrientedFunction, Supplier<Boolean> aimBotFunction, Supplier<Double> flyWheelFunction) {
+            Supplier<Boolean> fieldOrientedFunction, Supplier<Boolean> aimBotFunction, Supplier<Double> flyWheelShootFunction,
+            Supplier<Double> intakeVacuumFunction,
+            Supplier<Boolean> armLowScoreFunction, Supplier<Boolean> armPickUpFunction, Supplier<Boolean> armFeedFunction) {
         this.swerveSubsystem = swerveSubsystem;
         this.xSpdFunction = xSpdFunction;
         this.ySpdFunction = ySpdFunction;
         this.turningSpdFunction = turningSpdFunction;
         this.fieldOrientedFunction = fieldOrientedFunction;
         this.aimBotFunction = aimBotFunction;
-        this.flyWheelFunction = flyWheelFunction;
+        this.flyWheelShootFunction = flyWheelShootFunction;
+        this.intakeVacuumFunction = intakeVacuumFunction;
+        this.armLowScoreFunction = armLowScoreFunction;
+        this.armPickUpFunction = armPickUpFunction; 
+        this.armFeedFunction = armFeedFunction;
         this.xLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
         this.yLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
         this.turningLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond);
@@ -77,9 +91,38 @@ public class SwerveJoystickCmd extends CommandBase {
         swerveSubsystem.setModuleStates(moduleStates);
 
 
+
         //FlyWheel Shooter
-        RobotContainer.flyWheel.shoot(RobotContainer.controller1.getRightTriggerAxis());
+        RobotContainer.flyWheel.shoot(flyWheelShootFunction.get());
+
+
+
+        //Intake Vacuum/ Feeder
+        RobotContainer.intake.vacuum(intakeVacuumFunction.get());
+        RobotContainer.intake.feed(flyWheelShootFunction.get());
+
+
+
+        //Arm Movement
+        if(armPickUpFunction.get()){
+            RobotContainer.arm.setPivotTargetAngle(ArmConstants.PICK_UP_ANGLE);
+        }
+        if(armLowScoreFunction.get()){
+            RobotContainer.arm.setPivotTargetAngle(ArmConstants.LOW_SCORE_ANGLE);
+        }
+        if(armFeedFunction.get()){
+            RobotContainer.arm.setPivotTargetAngle(ArmConstants.LOAD_SHOOTER_ANGLE);
+        }
+
         
+
+        //Wrist Movement
+        if(armPickUpFunction.get()){
+            RobotContainer.intake.setPivotTargetAngle(WristConstants.PICK_UP_ANGLE);
+        }
+        if(armLowScoreFunction.get()){
+            RobotContainer.intake.setPivotTargetAngle(WristConstants.LOW_SCORE_ANGLE);
+        }
     }
 
 

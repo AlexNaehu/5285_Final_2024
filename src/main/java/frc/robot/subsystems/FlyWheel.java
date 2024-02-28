@@ -5,7 +5,6 @@ import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.RobotContainer;
 
 public class FlyWheel extends SubsystemBase{
     private final CANSparkMax leftWheel;
@@ -19,7 +18,7 @@ public class FlyWheel extends SubsystemBase{
         rightWheel = new CANSparkMax(rightWheelID, MotorType.kBrushless);
 
         leftWheel.setIdleMode(IdleMode.kCoast);
-        rightWheel.setIdleMode(com.revrobotics.CANSparkBase.IdleMode.kCoast);
+        rightWheel.setIdleMode(IdleMode.kCoast);
     }
 
     public void shoot(double power){
