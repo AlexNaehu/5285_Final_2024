@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -31,6 +32,7 @@ public class Robot extends TimedRobot {
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
+  public static Timer autonClock;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -63,9 +65,11 @@ public class Robot extends TimedRobot {
     RobotContainer.arm.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
     RobotContainer.intake.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
 
-    RobotContainer.arm.pivotPID();
+    RobotContainer.arm.pivotPID();    //Shoulder PID
 
     RobotContainer.intake.pivotPID(); //Wrist PID
+
+    autonClock = new Timer(); //starts in autonInit()
   }
 
   /**
@@ -107,7 +111,7 @@ public class Robot extends TimedRobot {
         // Put custom auto code here
         break;
       case Left3HighPrep:
-      
+        
         // Put custom auto code here
         break;
       case Mid3HighPrep:
@@ -115,7 +119,7 @@ public class Robot extends TimedRobot {
         // Put default auto code here
         break;
       case Right2Low1High:
-        
+        m_autonomousCommand = m_robotContainer.getRight2Low1HighAutonomousCommand();
         // Put default auto code here
         break;
       case Right3HighPrep:
@@ -128,6 +132,9 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
+
+    autonClock.reset();
+    autonClock.start();
   }
 
   /** This function is called periodically during autonomous. */
@@ -140,6 +147,8 @@ public class Robot extends TimedRobot {
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
     // this line or comment it out.
+    autonClock.stop();
+
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }

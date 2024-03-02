@@ -36,6 +36,8 @@ public class Intake extends SubsystemBase{
         wristEnc = new DutyCycleEncoder(wristEncoderID);
         intake.setIdleMode(IdleMode.kBrake);
         intake.setIdleMode(IdleMode.kBrake);
+
+        wrist.setSmartCurrentLimit(10);
     }
 
     public void vacuum(double power){

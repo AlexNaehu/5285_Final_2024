@@ -19,6 +19,9 @@ public class FlyWheel extends SubsystemBase{
 
         leftWheel.setIdleMode(IdleMode.kCoast);
         rightWheel.setIdleMode(IdleMode.kCoast);
+
+        leftWheel.setSmartCurrentLimit(20);
+        rightWheel.setSmartCurrentLimit(20);
     }
 
     public void shoot(double power){

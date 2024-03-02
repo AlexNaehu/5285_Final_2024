@@ -82,6 +82,7 @@ public final class Constants {
         public static final double PICK_UP_ANGLE = 0;
         public static final double LOW_SCORE_ANGLE = 100;
         public static final double LOAD_SHOOTER_ANGLE = 180;//TODO: check
+        //public static final double CLIMB_ANGLE = 200; //TODO: Need a climbing angle (could just be low score angle)
 
     }
 
@@ -97,9 +98,9 @@ public final class Constants {
         public static final double kMaxAngularSpeedRadiansPerSecond = DriveConstants.kPhysicalMaxAngularSpeedRadiansPerSecond / 5;
         public static final double kMaxAccelerationMetersPerSecondSquared = 3;
         public static final double kMaxAngularAccelerationRadiansPerSecondSquared = Math.PI / 1.3;
-        public static final double kPXController = 1.5;//1.5
-        public static final double kPYController = 1.5;//1.5
-        public static final double kPThetaController = 7;//3
+        public static final double kPXController = 1.5;//1.5 //TODO: May need to tune
+        public static final double kPYController = 1.5;//1.5 //TODO: May need to tune
+        public static final double kPThetaController = 7;//3 
 
         public static final TrapezoidProfile.Constraints kThetaControllerConstraints = //
                 new TrapezoidProfile.Constraints(

@@ -44,11 +44,14 @@ public class Arm extends SubsystemBase{
 
         leftShoulder.setIdleMode(IdleMode.kCoast);
         rightShoulder.setIdleMode(IdleMode.kCoast);
+
+        leftShoulder.setSmartCurrentLimit(10);
+        rightShoulder.setSmartCurrentLimit(10);
         
     }
 
     public double getPivotAngle() 
-    {   //returns a decimal (hopefuly)
+    {   //returns a decimal 0-1 of a full rotation (hopefuly)
         return ((armPivotEnc.getAbsolutePosition()-armPivotEnc.getPositionOffset()) * 360.0);
     }
   
@@ -187,13 +190,13 @@ public class Arm extends SubsystemBase{
     public void pivotArm(double power){
         //using limits
 
-        if (power > 0.9)
+        if (power > 1)
         {
-            power = 0.9;
+            power = 1;
         }
-        if (power < -0.9)
+        if (power < -1)
         {
-            power = -0.9;
+            power = -1;
         }
 
         double pivotAngle = this.getPivotAngle();
@@ -212,6 +215,12 @@ public class Arm extends SubsystemBase{
                     rightShoulder.set(0.0);
                     setPivotTargetAngle(ARM_PIVOT_MAX_ANGLE); //CHANGED HERE
                 }
+                else if (pivotAngle < ARM_PIVOT_MIN_ANGLE || Math.abs(power) > 1.0)
+                {
+                    leftShoulder.set(0.0);
+                    rightShoulder.set(0.0);
+                    setPivotTargetAngle(ARM_PIVOT_MIN_ANGLE);
+                }
                     else //if (Math.abs(power) > INPUT_THRESHOLD)
                     {
                         leftShoulder.set(power);
@@ -227,6 +236,12 @@ public class Arm extends SubsystemBase{
                     leftShoulder.set(0.0);
                     rightShoulder.set(0.0);
                     setPivotTargetAngle(ARM_PIVOT_MIN_ANGLE);
+                }
+                else if (pivotAngle > ARM_PIVOT_MAX_ANGLE || Math.abs(power) > 1.0)
+                {
+                    leftShoulder.set(0.0);
+                    rightShoulder.set(0.0);
+                    setPivotTargetAngle(ARM_PIVOT_MAX_ANGLE); //CHANGED HERE
                 }
                     else //if ( Math.abs(power) > INPUT_THRESHOLD)
                     {
