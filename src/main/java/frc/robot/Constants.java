@@ -15,7 +15,7 @@ public final class Constants {
         public static final double kTurningEncoderRot2Rad = kTurningMotorGearRatio * 2 * Math.PI;
         public static final double kDriveEncoderRPM2MeterPerSec = kDriveEncoderRot2Meter / 60;
         public static final double kTurningEncoderRPM2RadPerSec = kTurningEncoderRot2Rad / 60;
-        public static final double kPTurning = 0.5; //guess 0.5
+        public static final double kPTurning = 0.55; //guess 0.5
     }
 
     public static final class DriveConstants {
@@ -65,42 +65,43 @@ public final class Constants {
         public static final double kFrontRightDriveAbsoluteEncoderOffsetRad = (-42.753406)*Math.PI/180;
         public static final double kBackRightDriveAbsoluteEncoderOffsetRad = -46.417145*Math.PI/180;
 
-        public static final double kPhysicalMaxSpeedMetersPerSecond = 7;
-        public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = 2 * 4 * Math.PI;
+        public static final double kPhysicalMaxSpeedMetersPerSecond = 8;
+        public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = 2 * 3.5 * Math.PI;
 
-        public static final double kTeleDriveMaxSpeedMetersPerSecond = kPhysicalMaxSpeedMetersPerSecond / 3;
-        public static final double kTeleDriveMaxAngularSpeedRadiansPerSecond = kPhysicalMaxAngularSpeedRadiansPerSecond / 4;
-        public static final double kTeleDriveMaxAccelerationUnitsPerSecond = 3;
-        public static final double kTeleDriveMaxAngularAccelerationUnitsPerSecond = 3;//was 3
+        public static final double kTeleDriveMaxSpeedMetersPerSecond = kPhysicalMaxSpeedMetersPerSecond/1;
+        public static final double kTeleDriveMaxAngularSpeedRadiansPerSecond = kPhysicalMaxAngularSpeedRadiansPerSecond / 5;
+        public static final double kTeleDriveMaxAccelerationUnitsPerSecond = 2.5;
+        public static final double kTeleDriveMaxAngularAccelerationUnitsPerSecond = 3.5;//was 3
     }
 
     public static final class ArmConstants {
-        public static final double INVALID_ANGLE = 245.0; //TODO: Check invalid angle
+        public static final double INVALID_ANGLE = 9999;//220.0; //TODO: Check invalid angle, should be 5 degrees past the mechanical stop
         public static final double CONTROLLER_INPUT_WAIT_TIME = 0.005;
         public static final int NAVX_RESET_WAIT_TIME = 1;
 
-        public static final double PICK_UP_ANGLE = 0;
-        public static final double LOW_SCORE_ANGLE = 100;
-        public static final double LOAD_SHOOTER_ANGLE = 180;//TODO: check
+        public static final double PICK_UP_ANGLE = -55; //TODO: calibrate by setting the wrist manually to the desired 0 degree position, then report that angle here
+        public static final double LOW_SCORE_ANGLE = 47; //!Inverted!
+        public static final double LOAD_SHOOTER_ANGLE = 162.5;//TODO: check
         //public static final double CLIMB_ANGLE = 200; //TODO: Need a climbing angle (could just be low score angle)
 
     }
 
     public static final class WristConstants {
-        public static final double INVALID_ANGLE = 245.0; //TODO: Check invalid angle
+        public static final double INVALID_ANGLE = 9999;//-10; //TODO: Check invalid angle (Idea: Make the Mechanical stop the Invalid angle, then set the target angle to 5-10 degrees short of it so that we don't hit the wrist motor)
         public static final double CONTROLLER_INPUT_WAIT_TIME = 0.005;
 
-        public static final double PICK_UP_ANGLE = 0;
-        public static final double LOW_SCORE_ANGLE = 180;
+        public static final double FEED_ANGLE = 4;
+        public static final double PICK_UP_ANGLE = 185; //TODO: calibrate by setting the wrist manually to the desired 0 degree position, then report that angle here
+        public static final double LOW_SCORE_ANGLE = 110; //TODO: check
     }
     public static final class AutoConstants {
         public static final double kMaxSpeedMetersPerSecond = DriveConstants.kPhysicalMaxSpeedMetersPerSecond / 4;
         public static final double kMaxAngularSpeedRadiansPerSecond = DriveConstants.kPhysicalMaxAngularSpeedRadiansPerSecond / 5;
         public static final double kMaxAccelerationMetersPerSecondSquared = 3;
         public static final double kMaxAngularAccelerationRadiansPerSecondSquared = Math.PI / 1.3;
-        public static final double kPXController = 1.5;//1.5 //TODO: May need to tune
-        public static final double kPYController = 1.5;//1.5 //TODO: May need to tune
-        public static final double kPThetaController = 7;//3 
+        public static final double kPXController = 0.7;//1.5 //TODO: May need to tune (lower kP -> slower but more accurate path following)
+        public static final double kPYController = 0.7;//1.5 //TODO: May need to tune (lower kP -> slower but more accurate path following)
+        public static final double kPThetaController = 4;//7//3 
 
         public static final TrapezoidProfile.Constraints kThetaControllerConstraints = //
                 new TrapezoidProfile.Constraints(

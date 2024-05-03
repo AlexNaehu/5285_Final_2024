@@ -47,8 +47,8 @@ public class SwerveModule {
         driveMotor = new CANSparkMax(driveMotorId, MotorType.kBrushless);
         turningMotor = new CANSparkMax(turningMotorId, MotorType.kBrushless);
 
-        turningMotor.setSmartCurrentLimit(10);//Limits the current to 8 Amps
-        driveMotor.setSmartCurrentLimit(35);
+        turningMotor.setSmartCurrentLimit(30);//Limits the current to 8 Amps
+        driveMotor.setSmartCurrentLimit(30);
 
         driveMotor.setInverted(driveMotorReversed);
         turningMotor.setInverted(turningMotorReversed);
@@ -129,10 +129,10 @@ public class SwerveModule {
             turningMotor.set(turningPidController.calculate(getAbsoluteEncoderRad(), Math.abs(desiredState.angle.getRadians())-180));
         }
         SmartDashboard.putNumber("Angle Error", angleError);*/
-        SmartDashboard.putNumber("Desired State Before", desiredState.angle.getDegrees()); //prints for Back Right
+        /*SmartDashboard.putNumber("Desired State Before", desiredState.angle.getDegrees()); //prints for Back Right
         SmartDashboard.putNumber("Desired State After", desiredState.angle.getDegrees());
         SmartDashboard.putNumber("Desired Velocity Before", desiredState.speedMetersPerSecond);
-        SmartDashboard.putNumber("Desired Velocity After", desiredState.speedMetersPerSecond);
+        SmartDashboard.putNumber("Desired Velocity After", desiredState.speedMetersPerSecond);*/
         driveMotor.set(desiredState.speedMetersPerSecond / DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
         //delay the following line below by one second to prevent oversampling
         turningMotor.set(turningPidController.calculate(getAbsoluteEncoderRad(), desiredState.angle.getRadians()));

@@ -64,7 +64,7 @@ public class SensorObject {
               quadThreshParams.maxLineFitMSE *= 1.5;
               aprilTagDetector.setQuadThresholdParameters(quadThreshParams);
 
-              aprilTagDetector.addFamily("tag16h5");
+              aprilTagDetector.addFamily("tag36h11");
 
               var timer = new Timer();
               timer.start();
@@ -110,13 +110,14 @@ public class SensorObject {
                   Imgproc.circle(mat, center, 4, green);
                   Imgproc.putText(mat, String.valueOf(result.getId()), pt2, Imgproc.FONT_HERSHEY_SIMPLEX, 2, green, 7);
 
-                };
-
-                for (var id : set){
-                  SmartDashboard.putString("April Tag ID: ", String.valueOf(id));
-                  SmartDashboard.putNumber("Center X", centerX);
-                  SmartDashboard.putNumber("Center Y", centerY);
+                  for (var id : set){
+                  SmartDashboard.putString("AprilTag ID: ", String.valueOf(id));
+                  SmartDashboard.putNumber("Center x", centerX);
+                  SmartDashboard.putNumber("Center y", centerY);
                 }
+
+                };
+                 
 
                 //careful using the SmartDashboard.put method in a timer based if-timer loop
                 //incase it creates multiple output boxes on SmartDashboard UI

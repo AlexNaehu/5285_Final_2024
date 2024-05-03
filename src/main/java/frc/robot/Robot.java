@@ -4,12 +4,21 @@
 
 package frc.robot;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.net.PortForwarder;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.util.PixelFormat;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.event.NetworkBooleanEvent;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.subsystems.SensorObject;
 import frc.robot.subsystems.SwerveSubsystem;
 
 /**
@@ -23,34 +32,52 @@ public class Robot extends TimedRobot {
 
   private RobotContainer m_robotContainer;
 
-  private static final String Left2Low1High = "Left2Low1High";
-  private static final String Left3HighPrep = "Left3HighPrep";
-  private static final String Mid3HighPrep = "Mid3HighPrep";
-  private static final String Right2Low1High = "Right2Low1High";
-  private static final String Right3HighPrep = "Right3HighPrep";
+  private static final String BlueLeft3High = "Blue Left 3 High";
+  private static final String BlueMid3High = "Blue Mid 3 High";
+  private static final String BlueRight3High = "Blue Right 3 High";
+  private static final String RedRight3High = "Red Right 3 High";
+  private static final String RedMid3High = "Red Mid 3 High";
+  private static final String RedLeft3High = "Red Left 3 High";
 
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  public static Timer autonClock;
+  public static boolean inAuton = false;
+
+  public static SensorObject sensor;
+  public UsbCamera cam;
+
+  public static Timer robotClock = new Timer();
+  private Timer autonClock = new Timer();
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
   @Override
   public void robotInit() {
+
+    /*--------------------------------------------------------------------------
+    *  Initialize Limelight
+    *-------------------------------------------------------------------------*/
+
+    PortForwarder.add(5800, "limelight.local", 5800);
+    PortForwarder.add(5801, "limelight.local", 5801);
+    PortForwarder.add(5802, "limelight.local", 5802);
+
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
 
+    robotClock.start();
     /*--------------------------------------------------------------------------
     *  Initialize Auton
     *-------------------------------------------------------------------------*/
-    m_chooser.setDefaultOption("Left2Low1High", Left2Low1High);
-    m_chooser.addOption("Left3HighPrep", Left3HighPrep);
-    m_chooser.addOption("Mid3HighPrep", Mid3HighPrep);
-    m_chooser.addOption("Right2Low1High", Right2Low1High);
-    m_chooser.addOption("Right3HighPrep", Right3HighPrep);
+    m_chooser.setDefaultOption(" Blue Left 3 High", BlueLeft3High);
+    m_chooser.addOption("Blue Mid 3 High", BlueMid3High);
+    m_chooser.addOption("Blue Right 3 High", BlueRight3High);
+    m_chooser.addOption("Red Right 3 High", RedRight3High);
+    m_chooser.addOption("Red Mide 3 High", RedMid3High);
+    m_chooser.addOption("Red Left 3 High", RedLeft3High);
     SmartDashboard.putData("Auto choices", m_chooser);
 
     /*--------------------------------------------------------------------------
@@ -58,18 +85,32 @@ public class Robot extends TimedRobot {
     *  PID Threads
     *-------------------------------------------------------------------------*/
     
+    sensor = new SensorObject();
+
     SwerveSubsystem.gyro.reset();
+
+    
 
     RobotContainer.arm.armPivotEnc.reset();
     RobotContainer.intake.wristEnc.reset();
     RobotContainer.arm.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
-    RobotContainer.intake.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
+    RobotContainer.intake.setPivotTargetAngle(RobotContainer.intake.getPivotAngle());
 
     RobotContainer.arm.pivotPID();    //Shoulder PID
 
-    RobotContainer.intake.pivotPID(); //Wrist PID
+    RobotContainer.intake.wristPivotPID(); //Wrist PID
 
-    autonClock = new Timer(); //starts in autonInit()
+    RobotContainer.swerveSubsystem.aimBotPID(); //Tracks AprilTags using LimeLight
+
+    //RobotContainer.flyWheel.flyWheelPID();
+
+    //autonClock = new Timer(); //starts in autonInit()
+        cam = CameraServer.startAutomaticCapture();
+        cam.setFPS(15);
+        cam.setResolution(320, 240);
+        cam.setPixelFormat(PixelFormat.kMJPEG);
+        
+
   }
 
   /**
@@ -86,6 +127,23 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+
+    NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+
+    NetworkTableEntry tx = table.getEntry("tx");
+    NetworkTableEntry ty = table.getEntry("ty");
+    NetworkTableEntry ta = table.getEntry("ta");
+
+    double x = tx.getDouble(0.0);
+    double y = ty.getDouble(0.0);
+    double area = ta.getDouble(0.0);
+
+    SmartDashboard.putNumber("Limelight X", x);
+    SmartDashboard.putNumber("Limelight Y", y);
+    SmartDashboard.putNumber("Limelight Area", area);
+
+    //cam.setFPS(15);
+    //cam.setResolution(320, 240);
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -99,42 +157,49 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
 
+    inAuton = true;
+
     m_autoSelected = m_chooser.getSelected();
     System.out.println("Auto selected: " + m_autoSelected);
 
     RobotContainer.arm.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
-    RobotContainer.intake.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
+    RobotContainer.intake.setPivotTargetAngle(RobotContainer.intake.getPivotAngle());
 
     switch(m_autoSelected){
-      case Left2Low1High:
-        m_autonomousCommand = m_robotContainer.getLeft2Low1HighAutonomousCommand();
+      case BlueLeft3High:
+        m_autonomousCommand = m_robotContainer.getBlueLeft3HighAutonomousCommand();
+        // Put default auto code here
+        break;
+      case BlueMid3High:
+        m_autonomousCommand = m_robotContainer.getBlueMid3HighAutonomousCommand();
         // Put custom auto code here
         break;
-      case Left3HighPrep:
-        
+      case BlueRight3High:
+        m_autonomousCommand = m_robotContainer.getBlueRight3HighAutonomousCommand();
         // Put custom auto code here
         break;
-      case Mid3HighPrep:
-        
-        // Put default auto code here
+      case RedRight3High:
+        m_autonomousCommand = m_robotContainer.getRedRight3HighAutonomousCommand();
+        // Put custom auto code here
         break;
-      case Right2Low1High:
-        m_autonomousCommand = m_robotContainer.getRight2Low1HighAutonomousCommand();
-        // Put default auto code here
+      case RedMid3High:
+        m_autonomousCommand = m_robotContainer.getRedMid3HighAutonomousCommand();
+        // Put custom auto code here
         break;
-      case Right3HighPrep:
-        
-        // Put default auto code here
+      case RedLeft3High:
+        m_autonomousCommand = m_robotContainer.getRedLeft3HighAutonomousCommand();
+        // Put custom auto code here
         break;
     }
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
+      System.out.println("I Am running the Command scheduler");
       m_autonomousCommand.schedule();
     }
 
-    autonClock.reset();
-    autonClock.start();
+    //autonClock.reset();
+    //autonClock.start();
   }
 
   /** This function is called periodically during autonomous. */
@@ -147,14 +212,16 @@ public class Robot extends TimedRobot {
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
     // this line or comment it out.
-    autonClock.stop();
+    //autonClock.stop();
+
+    inAuton = false;
 
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
 
     RobotContainer.arm.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
-    RobotContainer.intake.setPivotTargetAngle(RobotContainer.arm.getPivotAngle());
+    RobotContainer.intake.setPivotTargetAngle(RobotContainer.intake.getPivotAngle());
   }
 
   /** This function is called periodically during operator control. */
