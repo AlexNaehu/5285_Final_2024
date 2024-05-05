@@ -164,13 +164,13 @@ public class SwerveJoystickCmd extends Command { //Was "extends CommandBase"
         
 
         //Wrist Movement
-        if(armPickUpFunction.get() && wristOnlyFunction.get()>0.1){
+        if(armPickUpFunction.get()){//} && wristOnlyFunction.get()>0.1){
             RobotContainer.intake.setPivotTargetAngle(WristConstants.PICK_UP_ANGLE);
         }
-        if(armLowScoreFunction.get() && wristOnlyFunction.get()>0.1){
+        if(armLowScoreFunction.get()){//} && wristOnlyFunction.get()>0.1){
             RobotContainer.intake.setPivotTargetAngle(WristConstants.LOW_SCORE_ANGLE);
         }
-        if(armFeedFunction.get() && wristOnlyFunction.get()>0.1){
+        if(armFeedFunction.get()){//} && wristOnlyFunction.get()>0.1){
             RobotContainer.intake.setPivotTargetAngle(WristConstants.FEED_ANGLE);
         }
 
